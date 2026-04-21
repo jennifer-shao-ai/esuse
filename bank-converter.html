@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>帳務轉換 · 眾用</title>
+<style>
+:root {
+  --primary: #4f46e5;
+  --primary-dark: #3730a3;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --sidebar-w: 220px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gray-100); color: var(--gray-800); display: flex; height: 100vh; overflow: hidden; }
+
+/* SIDEBAR */
+#sidebar { width: var(--sidebar-w); background: white; border-right: 1px solid var(--gray-200); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; scrollbar-width: thin; }
+.sidebar-logo { padding: 20px 16px 12px; border-bottom: 1px solid var(--gray-200); }
+.brand { font-size: 16px; font-weight: 700; color: var(--primary); }
+.sub { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+.sidebar-section { padding: 8px 8px 4px; }
+.sidebar-label { font-size: 10px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: .05em; padding: 0 8px; margin-bottom: 2px; }
+.nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; font-size: 13px; color: var(--gray-700); text-decoration: none; cursor: pointer; }
+.nav-item:hover { background: var(--gray-100); }
+.nav-item.active { background: #ede9fe; color: var(--primary); font-weight: 600; }
+.nav-item .icon { font-size: 15px; flex-shrink: 0; }
+.sidebar-footer { margin-top: auto; padding: 12px 16px; font-size: 11px; color: var(--gray-400); border-top: 1px solid var(--gray-200); }
+
+/* MAIN */
+#main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { background: white; border-bottom: 1px solid var(--gray-200); padding: 0 20px; height: 52px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.topbar-title { font-size: 16px; font-weight: 700; }
+.topbar-badge { background: #ede9fe; color: var(--primary); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+.btn-share { background: none; border: 1px solid var(--gray-200); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--gray-600); }
+.btn-hamburger { display: none; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray-700); padding: 4px; }
+.page { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* CARDS / UPLOAD */
+#dropzone { border: 2px dashed var(--gray-300); border-radius: 12px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all .2s; background: white; }
+#dropzone:hover, #dropzone.dragover { border-color: var(--primary); background: #f5f3ff; }
+.dz-icon { font-size: 48px; margin-bottom: 12px; }
+#dropzone h2 { font-size: 18px; margin-bottom: 8px; }
+#dropzone p { color: var(--gray-500); font-size: 14px; margin-bottom: 16px; }
+.btn-upload { display: inline-block; background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; }
+input[type=file] { display: none; }
+
+/* TABS */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--gray-200); padding-bottom: 0; }
+.tab { padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--gray-500); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ALERTS */
+.alert { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
+.alert-warning { background: #fef3c7; border: 1px solid #fde68a; }
+.alert-success { background: #dcfce7; border: 1px solid #86efac; }
+
+/* TABLE */
+.card { background: white; border-radius: 12px; border: 1px solid var(--gray-200); overflow: hidden; margin-bottom: 16px; }
+.card-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--gray-200); }
+.card-header h2 { font-size: 15px; font-weight: 600; }
+.table-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--gray-100); padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: var(--gray-500); white-space: nowrap; }
+td { padding: 8px 12px; border-top: 1px solid var(--gray-100); vertical-align: middle; }
+tr:hover td { background: #fafafa; }
+.type-in { color: var(--success); font-weight: 600; }
+.type-out { color: var(--danger); font-weight: 600; }
+.tag-unknown { background: #fef3c7; color: #92400e; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+.tag-auto { background: #dcfce7; color: #166534; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+
+/* BUTTONS */
+.btn { padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-outline { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
+.btn-outline:hover { background: var(--gray-100); }
+.btn-success { background: var(--success); color: white; }
+
+/* MODAL */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: white; border-radius: 12px; padding: 24px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+.modal h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.progress-text { font-size: 12px; color: var(--gray-500); margin-bottom: 12px; }
+.tx-info { background: var(--gray-100); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; }
+.tx-info .row { display: flex; justify-content: space-between; padding: 3px 0; }
+.tx-info .label { color: var(--gray-500); }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 4px; }
+.form-group select, .form-group input[type=text] { width: 100%; padding: 8px 10px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; }
+.checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ACCOUNTS */
+.account-row { display: grid; grid-template-columns: 1fr 1fr 36px; gap: 8px; margin-bottom: 8px; align-items: center; }
+.account-num { font-size: 12px; color: var(--gray-500); font-family: monospace; }
+.account-row input { padding: 6px 8px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  #sidebar { position: fixed; left: -var(--sidebar-w); top: 0; bottom: 0; z-index: 200; transform: translateX(-100%); transition: transform .25s; }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 199; }
+  #sidebar-overlay.show { display: block; }
+  .btn-hamburger { display: block; }
+}
+
+.standalone #sidebar { display: none; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">眾用</div>
+    <div class="sub">帳務工具</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">財務</div>
+    <a class="nav-item active" href="bank-converter.html">
+      <span class="icon">🏦</span> 帳務轉換
+    </a>
+  </div>
+  <div class="sidebar-footer">v1.0 · 眾用 © 2026</div>
+</div>
+
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div id="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn-hamburger" onclick="openSidebar()">☰</button>
+      <span class="topbar-title">帳務轉換</span>
+      <span class="topbar-badge">財務工具</span>
+      <span style="font-size:11px;color:var(--gray-400);margin-left:4px">v1.0</span>
+    </div>
+    <button class="btn-share" onclick="copyShare(this)" title="複製分享連結">🔗 分享</button>
+  </div>
+
+  <div class="page">
+
+    <div id="upload-section">
+      <div id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <div class="dz-icon">📄</div>
+        <h2>拖曳 帳戶明細 到這裡</h2>
+        <p>支援彰銀 CSV 簡易百年格式 · Big5 / UTF-8 自動偵測</p>
+        <div class="btn-upload">選擇檔案</div>
+        <input type="file" id="fileInput" accept=".csv" onchange="handleFile(this.files[0])">
+      </div>
+    </div>
+
+    <div id="result-section" style="display:none">
+      <div id="alert-resume" class="alert alert-warning" style="display:none">
+        <span>💾</span>
+        <span>有未完成的分類進度</span>
+        <button class="btn btn-primary" onclick="resumeSession()" style="margin-left:auto">繼續分類</button>
+      </div>
+      <div id="alert-unknown" class="alert alert-warning" style="display:none">
+        <span>⚠️</span>
+        <span><strong id="unknown-count">0</strong> 筆交易無法自動分類</span>
+        <button class="btn btn-primary" onclick="startCategorizing()" style="margin-left:auto">開始分類</button>
+      </div>
+      <div id="alert-done" class="alert alert-success" style="display:none">
+        <span>✅</span><span>所有交易已分類完成，可以下載</span>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('preview')">交易預覽</div>
+        <div class="tab" onclick="switchTab('rules')">分類規則</div>
+        <div class="tab" onclick="switchTab('accounts')">帳戶設定</div>
+      </div>
+
+      <div id="tab-preview" class="tab-content active">
+        <div class="card">
+          <div class="card-header">
+            <h2>交易記錄 <span id="row-count" style="color:var(--gray-600);font-weight:400;font-size:13px"></span></h2>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline" onclick="resetUpload()">↩ 重新上傳</button>
+              <button class="btn btn-success" onclick="downloadCSV()">⬇ 下載 CSV</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr>
+                <th>交易日期</th><th>交易類別</th><th>自帳戶</th><th>主幣別</th><th>帳戶幣別</th>
+                <th>原幣金額</th><th>主分類</th><th>子分類</th><th>收款人</th><th>描述</th><th>狀態</th><th></th>
+              </tr></thead>
+              <tbody id="preview-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-rules" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <h2>分類規則 <span id="rules-count" style="color:var(--gray-600);font-weight:400;font-size:13px"></span></h2>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline" onclick="exportRules()">匯出 JSON</button>
+              <button class="btn btn-outline" onclick="clearRules()">清除全部</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr>
+                <th>摘要</th><th>匯存代號關鍵字</th><th>收入/支出</th>
+                <th>主分類</th><th>子分類</th><th>收款人</th><th></th>
+              </tr></thead>
+              <tbody id="rules-body"></tbody>
+            </table>
+          </div>
+          <p style="font-size:12px;color:var(--gray-600);margin-top:12px">規則儲存在本機瀏覽器，不會消失</p>
+        </div>
+      </div>
+
+      <div id="tab-accounts" class="tab-content">
+        <div class="card">
+          <h2 style="margin-bottom:8px;padding:16px 20px 0">帳戶對應設定</h2>
+          <p style="font-size:14px;color:var(--gray-600);margin-bottom:16px;padding:0 20px">依 CSV 帳號欄位自動對應帳戶名稱</p>
+          <div id="account-list" style="padding:0 20px"></div>
+          <div style="display:flex;gap:8px;margin-top:12px;padding:0 20px 20px">
+            <button class="btn btn-outline" onclick="addAccountRow()">＋ 新增帳戶</button>
+            <button class="btn btn-primary" onclick="saveAccounts()">儲存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-backdrop" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h2 style="margin-bottom:0">📂 設定分類</h2>
+      <button onclick="editingIdx=-1;document.getElementById('modal-backdrop').style.display='none'" style="border:none;background:none;cursor:pointer;font-size:20px;color:var(--gray-400);line-height:1;padding:0 4px">✕</button>
+    </div>
+    <div class="progress-text" id="modal-progress"></div>
+    <div class="tx-info" id="modal-tx-info"></div>
+    <div class="form-group">
+      <label>收入 / 支出</label>
+      <select id="modal-type"><option value="收入">收入</option><option value="支出">支出</option></select>
+    </div>
+    <div class="form-group">
+      <label>主分類</label>
+      <select id="modal-main" onchange="handleMainChange()">
+        <option value="">-- 選擇 --</option>
+        <option>廠務費用</option>
+        <option>固定費用</option>
+        <option>薪資</option>
+        <option>資產(模具除外/倉庫開發)</option>
+        <option>資產-其他(買機器)</option>
+        <option>奢侈購置-電腦車硬體相關</option>
+        <option>開發費用</option>
+        <option>製造費用</option>
+        <option>其他費用</option>
+        <option>勞保</option><option>健保</option><option>勞退</option>
+        <option value="__custom__">＋ 自訂...</option>
+      </select>
+      <input type="text" id="modal-main-custom" placeholder="輸入自訂主分類" style="display:none;margin-top:8px">
+    </div>
+    <div class="form-group">
+      <label>子分類</label>
+      <select id="modal-sub-select" onchange="handleSubSelectChange()" style="display:none"></select>
+      <input type="text" id="modal-sub" placeholder="輸入子分類">
+    </div>
+    <div class="form-group">
+      <label>收款人 / 付款方</label>
+      <input type="text" id="modal-payee" placeholder="例：廠商名稱">
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="modal-remember" checked>
+      <label for="modal-remember">記住此規則，相同摘要＋來源代號自動套用</label>
+    </div>
+    <div id="split-section" style="display:none;margin-top:16px;border-top:1px solid var(--gray-200);padding-top:16px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">拆分金額 <span style="color:var(--gray-400);font-weight:400">（合計需等於原始金額）</span></div>
+      <div id="split-rows"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <button class="btn btn-outline" style="padding:4px 10px;font-size:12px" onclick="addSplitRow()">＋ 新增行</button>
+        <span style="font-size:12px;color:var(--gray-600)">剩餘：<strong id="split-remaining">0</strong></span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:12px" onclick="confirmSplit()">確認拆分</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="confirmCategory()">確認</button>
+      <button class="btn btn-outline" onclick="toggleSplit()">拆分此筆</button>
+      <button class="btn btn-outline" onclick="skipCategory()">跳過此筆</button>
+      <button class="btn btn-outline" onclick="saveAndClose()" style="margin-left:auto">暫存並關閉</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────
+let transactions = [];
+let unknownQueue = [];
+let currentIdx = 0;
+let editingIdx = -1;
+const KEY_RULES    = 'esuse_rules_v1';
+const KEY_ACCOUNTS = 'esuse_accounts_v1';
+const KEY_SESSION  = 'esuse_session_v1';
+
+// ── ACCOUNTS ──────────────────────────────────────────────────
+const DEFAULT_ACCOUNTS = [];
+function getAccounts() {
+  try { return JSON.parse(localStorage.getItem(KEY_ACCOUNTS)) || [...DEFAULT_ACCOUNTS]; }
+  catch(e) { return [...DEFAULT_ACCOUNTS]; }
+}
+function saveAccountsStore(arr) { localStorage.setItem(KEY_ACCOUNTS, JSON.stringify(arr)); }
+function getAccountName(raw) {
+  const clean = raw.replace(/[-\s]/g, '');
+  for (const a of getAccounts()) {
+    const n = a.number.replace(/[-\s]/g, '');
+    if (n === clean || clean.endsWith(n.slice(-6)) || n.endsWith(clean.slice(-6))) return a.name;
+  }
+  return raw;
+}
+
+// ── CATEGORY MAP ──────────────────────────────────────────────
+const CATEGORY_MAP = {
+  '廠務費用': [
+    '水費','廠務費用-污水處理費','廠務費用-電費','廠務費用-電話費','廠務費用-電梯/叉車',
+    '廠務費用-機電保養-每年一次/每月約3334','廠務費用-自動倉儲保養+維修費',
+    '廠務費用-消防安全檢查年度申報+維修費','廠務費用-其他廠務維修費',
+    '廠務費用-火險','廠務費用-保全費用-年費',
+  ],
+  '固定費用': [
+    '影印機租費','BIS年費(11306起不含稅)','郵件維護費-年費',
+    '正一會計費-每月一次+年度財簽','品保稽核費(16949/ISO/RDW/E-mark年度審費)',
+    '租金','本利和','職工福利(含職福金)','律師費','網站維護費',
+  ],
+  '薪資': [
+    '正工','業務獎金','研發獎金','加班',
+    '勞保費/健保費/勞退','外籍就業安定費','年終',
+  ],
+  '資產(模具除外/倉庫開發)': [],
+  '資產-其他(買機器)': [],
+  '奢侈購置-電腦車硬體相關': [],
+  '開發費用': [
+    '模具','模具-警示燈','修模費','治具',
+    '開發-樣品費(含業務申請)','開發-設計費','開發-認證/測試費','開發-耗材等',
+  ],
+  '製造費用': [
+    '廠區廠務-耗材+維修費','製造費用-加工費-DANNY','製造費用-整廠設備-DANNY',
+    '製造費用-SMT相關(鋼板+維修+耗材耗費費用)','製造費用-機具校正及維修費',
+    '製造費用-廢料/廢票+費用-全廠耗材',
+  ],
+  '其他費用': [
+    '公協會費/年費','差旅費','廣告費-展覽','廣告費-DM/行銷費',
+    '出口費用(含報關費/機械使用費)','運費','其他-1111/104',
+    '其他-手續費及+一般郵資','其他-利息',
+    '地價稅/牌照稅/汽車保險/地板稅/房屋稅','牌照稅(實繳/暫繳)',
+  ],
+};
+
+// ── RULES ─────────────────────────────────────────────────────
+const DEFAULT_RULES = [
+  { summary: '勞保', contains: true, payeeKey: '', type: '支出', main: '勞保', sub: '', payee: '' },
+  { summary: '健保', contains: true, payeeKey: '', type: '支出', main: '健保', sub: '', payee: '' },
+  { summary: '勞退', contains: true, payeeKey: '', type: '支出', main: '勞退', sub: '', payee: '' },
+];
+function getRules() {
+  try { const s = localStorage.getItem(KEY_RULES); return s ? JSON.parse(s) : [...DEFAULT_RULES]; }
+  catch(e) { return [...DEFAULT_RULES]; }
+}
+function saveRulesStore(arr) { localStorage.setItem(KEY_RULES, JSON.stringify(arr)); }
+function upsertRule(rule) {
+  const rules = getRules();
+  const key = r => `${r.summary}||${r.payeeKey}`;
+  const idx = rules.findIndex(r => key(r) === key(rule));
+  if (idx >= 0) rules[idx] = rule; else rules.push(rule);
+  saveRulesStore(rules);
+}
+function findRule(summary, payeeCode, fullText) {
+  const rules = getRules(); const s = summary.trim(); const p = payeeCode.trim(); const f = (fullText||'').trim();
+  for (const r of rules) { if (!r.contains && r.summary === s && r.payeeKey && p.includes(r.payeeKey)) return r; }
+  for (const r of rules) { if (!r.contains && r.summary === s && !r.payeeKey) return r; }
+  for (const r of rules) { if (r.contains && (s.includes(r.summary) || f.includes(r.summary))) return r; }
+  return null;
+}
+
+// ── DATE ──────────────────────────────────────────────────────
+function rocToAd(s) {
+  s = s.trim().replace(/\D/g, '');
+  if (s.length < 7) return s;
+  return (parseInt(s.slice(0,3)) + 1911) + s.slice(3,5) + s.slice(5,7);
+}
+
+// ── CSV PARSING ───────────────────────────────────────────────
+function parseField(f) { return f.replace(/^=?"?/, '').replace(/"$/, '').trim(); }
+function parseLine(line) {
+  const fields = []; let cur = ''; let inQ = false;
+  for (const ch of line) {
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { fields.push(parseField(cur)); cur = ''; }
+    else { cur += ch; }
+  }
+  fields.push(parseField(cur)); return fields;
+}
+function decode(buf) {
+  for (const enc of ['big5','utf-8']) {
+    try { const t = new TextDecoder(enc).decode(buf); if (/[\u4e00-\u9fff]/.test(t)) return t; } catch(e) {}
+  }
+  return new TextDecoder('utf-8',{fatal:false}).decode(buf);
+}
+const C = { ACC:0, TX_DT:2, CUR:5, EXP:6, INC:7, SUM:9, PAYEE:11, NOTE:12, MEMO:14 };
+function parseTWD2601(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const result = []; let skipFirst = true;
+  for (const line of lines) {
+    const f = parseLine(line);
+    if (skipFirst) { skipFirst = false; if (f[C.EXP]==='支出金額'||f[C.INC]==='存入金額'||f[0]==='帳號') continue; }
+    if (f.length < 8) continue;
+    const exp = parseFloat(f[C.EXP])||0; const inc = parseFloat(f[C.INC])||0;
+    if (!exp && !inc) continue;
+    const summary   = (f[C.SUM]||'').trim();
+    const payeeCode = (f[C.PAYEE]||'').trim();
+    const note      = (f[C.NOTE]||'') + (f[C.MEMO] ? ' '+f[C.MEMO] : '');
+    const fullText  = [summary, payeeCode, note.trim()].join(' ');
+    let rule        = findRule(summary, payeeCode, fullText);
+    if (!rule) {
+      for (const kw of ['健保','勞保','勞退']) {
+        if (fullText.includes(kw)) { rule = { type:'支出', main:kw, sub:'', payee:'' }; break; }
+      }
+    }
+    const descParts = [summary, payeeCode, note.trim()].filter(s => s && s !== '00000000');
+    result.push({
+      date: rocToAd(f[C.TX_DT]), accountNum: f[C.ACC],
+      accountName: getAccountName(f[C.ACC]), currency: f[C.CUR]||'TWD',
+      amount: inc>0 ? inc : exp, rawType: inc>0 ? '收入' : '支出',
+      summary, payeeCode, description: [...new Set(descParts)].join(' ').trim(),
+      main: rule?rule.main:'', sub: rule?rule.sub:'', payee: rule?rule.payee:'',
+      type: rule ? rule.type : (inc>0?'收入':'支出'), auto: !!rule, needsCat: !rule,
+    });
+  }
+  return result;
+}
+
+// ── FILE HANDLING ─────────────────────────────────────────────
+async function handleFile(file) {
+  if (!file) return;
+  try {
+    const text = decode(await file.arrayBuffer());
+    transactions = parseTWD2601(text);
+    if (!transactions.length) { alert('無法解析檔案，請確認為彰銀帳務明細 CSV'); return; }
+    unknownQueue = transactions.filter(t => t.needsCat); currentIdx = 0;
+    renderAll();
+    document.getElementById('upload-section').style.display = 'none';
+    document.getElementById('result-section').style.display = 'block';
+  } catch(e) { alert('讀取失敗：' + e.message); }
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderAll() { renderPreview(); renderRules(); updateAlerts(); }
+function updateAlerts() {
+  const n = transactions.filter(t => t.needsCat).length;
+  document.getElementById('row-count').textContent = `共 ${transactions.length} 筆`;
+  document.getElementById('unknown-count').textContent = n;
+  document.getElementById('alert-unknown').style.display = n > 0 ? 'flex' : 'none';
+  document.getElementById('alert-done').style.display   = n === 0 ? 'flex' : 'none';
+}
+function renderPreview() {
+  const tbody = document.getElementById('preview-body'); tbody.innerHTML = '';
+  transactions.forEach((tx, i) => {
+    const tr = document.createElement('tr');
+    if (tx.description && /更正|被更正/.test(tx.description)) tr.style.backgroundColor = '#fed7aa';
+    const cls = tx.type==='收入' ? 'type-in' : 'type-out';
+    const statusTag = tx.needsCat ? '<span class="tag-unknown">待分類</span>' : tx.edited ? '<span class="tag-auto" style="background:#dbeafe;color:#1d4ed8">已編輯</span>' : '<span class="tag-auto">自動</span>';
+    tr.innerHTML = `<td>${tx.date}</td><td class="${cls}">${tx.type}</td><td>${tx.accountName}</td>
+      <td>${tx.currency}</td><td>${tx.currency}</td><td style="text-align:right">${tx.amount.toLocaleString()}</td>
+      <td>${tx.main||'<span style="color:#9ca3af">未分類</span>'}</td><td>${tx.sub}</td>
+      <td>${tx.payee}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis" title="${tx.description}">${tx.description}</td>
+      <td>${statusTag}</td>
+      <td><button class="btn btn-outline" style="padding:3px 8px;font-size:12px;white-space:nowrap" onclick="openEditModal(${i})">✏ 編輯</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+function renderRules() {
+  const rules = getRules();
+  document.getElementById('rules-count').textContent = `共 ${rules.length} 條`;
+  const tbody = document.getElementById('rules-body'); tbody.innerHTML = '';
+  rules.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.summary}</td><td>${r.payeeKey||'<em style="color:#9ca3af">任意</em>'}</td>
+      <td class="${r.type==='收入'?'type-in':'type-out'}">${r.type}</td>
+      <td>${r.main}</td><td>${r.sub}</td><td>${r.payee}</td>
+      <td><button class="btn btn-outline" style="padding:3px 8px;font-size:12px" onclick="deleteRule(${i})">刪除</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── ACCOUNTS TAB ──────────────────────────────────────────────
+function renderAccountList() {
+  const accounts = getAccounts(); const el = document.getElementById('account-list'); el.innerHTML = '';
+  accounts.forEach((a, i) => {
+    const row = document.createElement('div'); row.className = 'account-row';
+    row.innerHTML = `<span class="account-num">${a.number}</span>
+      <input type="text" value="${a.name}" onchange="updateAccount(${i},this.value)">
+      <button class="btn btn-outline" style="padding:5px 10px" onclick="removeAccount(${i})">✕</button>`;
+    el.appendChild(row);
+  });
+}
+function updateAccount(i, v) { const a = getAccounts(); a[i].name = v; saveAccountsStore(a); }
+function removeAccount(i)    { const a = getAccounts(); a.splice(i,1); saveAccountsStore(a); renderAccountList(); }
+function addAccountRow() {
+  const num  = prompt('請輸入完整帳號（不含符號）：'); if (!num) return;
+  const name = prompt('請輸入帳戶名稱：');             if (!name) return;
+  const a = getAccounts(); a.push({ number: num.trim(), name: name.trim() });
+  saveAccountsStore(a); renderAccountList();
+}
+function saveAccounts() { alert('帳戶設定已儲存！'); }
+
+// ── CATEGORIZATION ────────────────────────────────────────────
+function startCategorizing() {
+  unknownQueue = transactions.filter(t => t.needsCat); currentIdx = 0;
+  if (!unknownQueue.length) { updateAlerts(); return; }
+  showModal(unknownQueue[0]);
+}
+function openEditModal(i) {
+  editingIdx = i;
+  const tx = transactions[i];
+  document.getElementById('modal-progress').textContent = `編輯分類`;
+  document.getElementById('modal-tx-info').innerHTML = `
+    <div class="row"><span class="label">日期</span><span>${tx.date}</span></div>
+    <div class="row"><span class="label">帳戶</span><span>${tx.accountName}</span></div>
+    <div class="row"><span class="label">摘要</span><span>${tx.summary}</span></div>
+    <div class="row"><span class="label">來源代號</span><span>${tx.payeeCode}</span></div>
+    <div class="row"><span class="label">金額</span><strong>${tx.amount.toLocaleString()} ${tx.currency}</strong></div>
+    ${tx.description?`<div class="row"><span class="label">描述</span><span>${tx.description}</span></div>`:''}`;
+  document.getElementById('modal-type').value = tx.type;
+  const mainSel = document.getElementById('modal-main');
+  const knownVals = Array.from(mainSel.options).map(o => o.value).filter(v => v && v !== '__custom__');
+  if (knownVals.includes(tx.main)) {
+    mainSel.value = tx.main;
+    document.getElementById('modal-main-custom').style.display = 'none';
+    document.getElementById('modal-main-custom').value = '';
+  } else if (tx.main) {
+    mainSel.value = '__custom__';
+    document.getElementById('modal-main-custom').style.display = 'block';
+    document.getElementById('modal-main-custom').value = tx.main;
+  } else {
+    mainSel.value = '';
+    document.getElementById('modal-main-custom').style.display = 'none';
+    document.getElementById('modal-main-custom').value = '';
+  }
+  handleMainChange();
+  const subSel = document.getElementById('modal-sub-select');
+  const subInput = document.getElementById('modal-sub');
+  if (subSel.style.display !== 'none' && tx.sub) {
+    const subOpts = Array.from(subSel.options).map(o => o.value);
+    if (subOpts.includes(tx.sub)) {
+      subSel.value = tx.sub; subInput.value = tx.sub;
+    } else {
+      subSel.style.display = 'none'; subInput.style.display = 'block'; subInput.value = tx.sub;
+    }
+  } else { subInput.value = tx.sub || ''; }
+  document.getElementById('modal-payee').value = tx.payee || '';
+  document.getElementById('modal-remember').checked = false;
+  document.getElementById('split-section').style.display = 'none';
+  splitTx = null;
+  document.getElementById('modal-backdrop').style.display = 'flex';
+}
+function showModal(tx) {
+  editingIdx = -1;
+  const total = transactions.filter(t => t.needsCat).length;
+  document.getElementById('modal-progress').textContent = `第 ${currentIdx+1} 筆（共 ${total} 筆待分類）`;
+  document.getElementById('modal-tx-info').innerHTML = `
+    <div class="row"><span class="label">日期</span><span>${tx.date}</span></div>
+    <div class="row"><span class="label">帳戶</span><span>${tx.accountName}</span></div>
+    <div class="row"><span class="label">摘要</span><span>${tx.summary}</span></div>
+    <div class="row"><span class="label">來源代號</span><span>${tx.payeeCode}</span></div>
+    <div class="row"><span class="label">金額</span><strong>${tx.amount.toLocaleString()} ${tx.currency}</strong></div>
+    ${tx.description?`<div class="row"><span class="label">描述</span><span>${tx.description}</span></div>`:''}`;
+  document.getElementById('modal-type').value = tx.rawType;
+  document.getElementById('modal-main').value = '';
+  document.getElementById('modal-main-custom').style.display = 'none';
+  document.getElementById('modal-main-custom').value = '';
+  document.getElementById('modal-sub-select').style.display = 'none';
+  document.getElementById('modal-sub-select').innerHTML = '';
+  document.getElementById('modal-sub').style.display = 'block';
+  document.getElementById('modal-sub').value = '';
+  document.getElementById('modal-payee').value = tx.payeeCode || '';
+  document.getElementById('modal-remember').checked = true;
+  document.getElementById('split-section').style.display = 'none';
+  splitTx = null;
+  document.getElementById('modal-backdrop').style.display = 'flex';
+}
+function handleMainChange() {
+  const v = document.getElementById('modal-main').value;
+  const customEl = document.getElementById('modal-main-custom');
+  const subSel = document.getElementById('modal-sub-select');
+  const subInput = document.getElementById('modal-sub');
+  customEl.style.display = v==='__custom__' ? 'block' : 'none';
+  if (v==='__custom__') customEl.focus();
+  const subs = CATEGORY_MAP[v];
+  if (subs && subs.length) {
+    subSel.innerHTML = '<option value="">-- 選擇 --</option>' +
+      subs.map(s => `<option>${s}</option>`).join('') +
+      '<option value="__custom_sub__">＋ 自訂...</option>';
+    subSel.style.display = 'block'; subInput.style.display = 'none'; subInput.value = '';
+  } else {
+    subSel.style.display = 'none'; subInput.style.display = 'block';
+  }
+}
+function handleSubSelectChange() {
+  const sel = document.getElementById('modal-sub-select');
+  const input = document.getElementById('modal-sub');
+  if (sel.value === '__custom_sub__') {
+    sel.style.display = 'none'; input.style.display = 'block'; input.focus(); input.value = '';
+  } else { input.value = sel.value; }
+}
+function getModalVals() {
+  const sel = document.getElementById('modal-main').value;
+  const cus = document.getElementById('modal-main-custom').value.trim();
+  const subSel = document.getElementById('modal-sub-select');
+  const subInput = document.getElementById('modal-sub');
+  const subVal = (subSel.style.display !== 'none' && subSel.value && subSel.value !== '__custom_sub__')
+    ? subSel.value : subInput.value.trim();
+  return {
+    type: document.getElementById('modal-type').value,
+    main: sel==='__custom__' ? cus : sel,
+    sub:  subVal,
+    payee:document.getElementById('modal-payee').value.trim(),
+    remember: document.getElementById('modal-remember').checked,
+  };
+}
+function applyToTx(tx, v) { tx.type=v.type; tx.main=v.main; tx.sub=v.sub; tx.payee=v.payee; tx.needsCat=false; }
+function confirmCategory() {
+  const v = getModalVals(); if (!v.main) { alert('請選擇主分類'); return; }
+  if (editingIdx >= 0) {
+    const tx = transactions[editingIdx]; applyToTx(tx, v); tx.edited = true; editingIdx = -1;
+    document.getElementById('modal-backdrop').style.display = 'none'; renderAll(); return;
+  }
+  const tx = unknownQueue[currentIdx]; applyToTx(tx, v);
+  if (v.remember) {
+    const rule = { summary:tx.summary, payeeKey:tx.payeeCode, type:v.type, main:v.main, sub:v.sub, payee:v.payee };
+    upsertRule(rule);
+    for (const t of transactions) { if (t.needsCat && t.summary===tx.summary && t.payeeCode===tx.payeeCode) applyToTx(t,v); }
+  }
+  unknownQueue = transactions.filter(t => t.needsCat);
+  currentIdx = Math.min(currentIdx, unknownQueue.length - 1);
+  nextOrClose();
+}
+function skipCategory() { currentIdx++; nextOrClose(); }
+function nextOrClose() {
+  if (currentIdx < 0 || currentIdx >= unknownQueue.length) {
+    document.getElementById('modal-backdrop').style.display = 'none'; renderAll();
+  } else { showModal(unknownQueue[currentIdx]); }
+}
+
+// ── DOWNLOAD ──────────────────────────────────────────────────
+function downloadCSV() {
+  const headers = ['交易日期','交易類別','自帳戶','主幣別','帳戶幣別','原幣金額','主分類','子分類','收款人','描述'];
+  const rows = transactions.map(tx => [tx.date,tx.type,tx.accountName,tx.currency,tx.currency,tx.amount,tx.main,tx.sub,tx.payee,tx.description]);
+  const esc = v => { const s=String(v??''); return (s.includes(',')||s.includes('"')||s.includes('\n'))?`"${s.replace(/"/g,'""')}"`:s; };
+  const csv = [headers,...rows].map(r=>r.map(esc).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `esuse_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.csv`; a.click();
+  localStorage.removeItem(KEY_SESSION);
+}
+
+// ── RULES MGMT ───────────────────────────────────────────────
+function deleteRule(i) {
+  const rules = getRules(); if (!confirm(`刪除規則「${rules[i].summary}」？`)) return;
+  rules.splice(i,1); saveRulesStore(rules); renderRules();
+}
+function clearRules() {
+  if (!confirm('清除所有分類規則？')) return;
+  localStorage.removeItem(KEY_RULES); renderRules();
+}
+function exportRules() {
+  const blob = new Blob([JSON.stringify(getRules(),null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='esuse_rules.json'; a.click();
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function switchTab(name) {
+  ['preview','rules','accounts'].forEach((n,i) => {
+    document.querySelectorAll('.tabs .tab')[i].classList.toggle('active', n===name);
+    document.getElementById('tab-'+n).classList.toggle('active', n===name);
+  });
+  if (name==='accounts') renderAccountList();
+  if (name==='rules') renderRules();
+}
+
+// ── DRAG & DROP ───────────────────────────────────────────────
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+
+function resetUpload() {
+  localStorage.removeItem(KEY_SESSION);
+  document.getElementById('upload-section').style.display = 'block';
+  document.getElementById('result-section').style.display = 'none';
+  document.getElementById('fileInput').value = ''; transactions = [];
+}
+
+// ── SESSION ───────────────────────────────────────────────────
+function saveAndClose() {
+  localStorage.setItem(KEY_SESSION, JSON.stringify({ transactions, savedAt: Date.now() }));
+  document.getElementById('modal-backdrop').style.display = 'none';
+  renderAll(); showResumeAlert();
+}
+function getSavedSession() {
+  try { return JSON.parse(localStorage.getItem(KEY_SESSION)); } catch { return null; }
+}
+function showResumeAlert() {
+  const el = document.getElementById('alert-resume');
+  if (el) el.style.display = getSavedSession() ? 'flex' : 'none';
+}
+function resumeSession() {
+  const sess = getSavedSession(); if (!sess) return;
+  transactions = sess.transactions;
+  unknownQueue = transactions.filter(t => t.needsCat); currentIdx = 0;
+  localStorage.removeItem(KEY_SESSION);
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('result-section').style.display = 'block';
+  renderAll();
+  if (unknownQueue.length) showModal(unknownQueue[0]);
+}
+
+// ── SPLIT ─────────────────────────────────────────────────────
+let splitTx = null;
+function toggleSplit() {
+  const sec = document.getElementById('split-section');
+  if (sec.style.display !== 'none') { sec.style.display = 'none'; splitTx = null; return; }
+  splitTx = editingIdx >= 0 ? transactions[editingIdx] : unknownQueue[currentIdx];
+  sec.style.display = 'block';
+  document.getElementById('split-rows').innerHTML = '';
+  addSplitRow(); addSplitRow();
+  updateSplitRemaining();
+}
+function addSplitRow() {
+  const mainOpts = Object.keys(CATEGORY_MAP).map(k => `<option>${k}</option>`).join('');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:grid;grid-template-columns:90px 1fr 1fr 28px;gap:6px;margin-bottom:6px;align-items:center';
+  row.innerHTML = `<input type="number" class="split-amount" placeholder="金額" oninput="updateSplitRemaining()" style="padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px">
+    <select class="split-main" onchange="updateSplitSubDropdown(this)" style="padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px"><option value="">-- 主分類 --</option>${mainOpts}</select>
+    <select class="split-sub" style="padding:6px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:13px"><option value="">-- 子分類 --</option></select>
+    <button onclick="removeSplitRow(this)" style="border:none;background:none;cursor:pointer;color:var(--gray-400);font-size:18px;padding:0">✕</button>`;
+  document.getElementById('split-rows').appendChild(row);
+}
+function removeSplitRow(btn) { btn.closest('div').remove(); updateSplitRemaining(); }
+function updateSplitSubDropdown(sel) {
+  const subSel = sel.parentElement.querySelector('.split-sub');
+  const subs = CATEGORY_MAP[sel.value] || [];
+  subSel.innerHTML = '<option value="">-- 子分類 --</option>' + subs.map(s => `<option>${s}</option>`).join('');
+}
+function updateSplitRemaining() {
+  if (!splitTx) return;
+  const total = Array.from(document.querySelectorAll('.split-amount')).reduce((s, el) => s + (parseFloat(el.value)||0), 0);
+  const rem = splitTx.amount - total;
+  const el = document.getElementById('split-remaining');
+  el.textContent = rem.toLocaleString();
+  el.style.color = rem === 0 ? 'var(--success)' : rem < 0 ? 'var(--danger)' : 'var(--gray-600)';
+}
+function confirmSplit() {
+  const rows = document.querySelectorAll('#split-rows > div');
+  const parts = [];
+  for (const row of rows) {
+    const amt = parseFloat(row.querySelector('.split-amount').value)||0;
+    const main = row.querySelector('.split-main').value;
+    const sub = row.querySelector('.split-sub').value;
+    if (!amt || !main) { alert('請填寫每行的金額與主分類'); return; }
+    parts.push({ amt, main, sub });
+  }
+  const total = parts.reduce((s, p) => s + p.amt, 0);
+  if (Math.abs(total - splitTx.amount) > 0.01) { alert(`合計 ${total.toLocaleString()} ≠ 原始 ${splitTx.amount.toLocaleString()}`); return; }
+  const idx = transactions.indexOf(splitTx);
+  const entries = parts.map((p, i) => ({ ...splitTx, amount: p.amt, main: p.main, sub: p.sub, needsCat: false, edited: true, description: splitTx.description + ` [拆分${i+1}/${parts.length}]` }));
+  transactions.splice(idx, 1, ...entries);
+  document.getElementById('split-section').style.display = 'none'; splitTx = null;
+  if (editingIdx >= 0) {
+    editingIdx = -1;
+    document.getElementById('modal-backdrop').style.display = 'none'; renderAll(); return;
+  }
+  unknownQueue = transactions.filter(t => t.needsCat);
+  currentIdx = Math.min(currentIdx, unknownQueue.length - 1);
+  nextOrClose();
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+if (!localStorage.getItem(KEY_RULES)) saveRulesStore(DEFAULT_RULES);
+if (!localStorage.getItem(KEY_ACCOUNTS)) saveAccountsStore(DEFAULT_ACCOUNTS);
+showResumeAlert();
+</script>
+<script>
+function copyShare(b){navigator.clipboard.writeText(location.origin+location.pathname+"?share").then(()=>{b.textContent="✅ 已複製";setTimeout(()=>b.innerHTML="🔗 分享",1500)});}
+function openSidebar() { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('show'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); }
+if(location.search.includes("share"))document.body.classList.add("standalone");
+</script>
+</body>
+</html>
