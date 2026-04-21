@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>眾用 工具箱</title>
+<style>
+:root {
+  --primary: #4f46e5; --primary-dark: #3730a3; --primary-light: #ede9fe;
+  --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-400: #9ca3af;
+  --gray-600: #4b5563; --gray-800: #1f2937;
+  --sidebar-bg: #1e1b4b; --sidebar-w: 220px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: var(--gray-100); color: var(--gray-800); min-height: 100vh; display: flex; }
+
+#sidebar {
+  width: var(--sidebar-w); min-height: 100vh; background: var(--sidebar-bg);
+  display: flex; flex-direction: column; flex-shrink: 0;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  overflow-y: auto; scrollbar-width: thin;
+}
+.sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sidebar-logo .brand { color: white; font-size: 16px; font-weight: 700; }
+.sidebar-logo .sub { color: rgba(255,255,255,0.4); font-size: 11px; margin-top: 2px; }
+.sidebar-section { padding: 16px 8px 4px; }
+.sidebar-label { color: rgba(255,255,255,0.3); font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 0 8px; margin-bottom: 4px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 6px; cursor: pointer; color: rgba(255,255,255,0.55); font-size: 13px; font-weight: 500; transition: all 0.15s; margin-bottom: 2px; text-decoration: none; }
+.nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+.nav-item.active { background: var(--primary); color: white; }
+.nav-item .icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+.sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.25); font-size: 11px; }
+
+#main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { background: white; border-bottom: 1px solid var(--gray-200); padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.topbar-title { font-size: 15px; font-weight: 600; }
+.hamburger { display: none; background: none; border: none; cursor: pointer; padding: 6px; border-radius: 6px; color: var(--gray-800); font-size: 20px; }
+.hamburger:hover { background: var(--gray-100); }
+#sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+#sidebar-overlay.active { display: block; }
+
+.page { padding: 24px; flex: 1; }
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.page-header p { color: var(--gray-600); font-size: 14px; }
+
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.tool-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.15s; border: 2px solid transparent; text-decoration: none; color: inherit; display: block; }
+.tool-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(79,70,229,0.12); transform: translateY(-1px); }
+.tool-card .tc-icon { font-size: 32px; margin-bottom: 12px; }
+.tool-card .tc-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.tool-card .tc-desc { font-size: 12px; color: var(--gray-600); line-height: 1.5; }
+.tool-card .tc-tag { margin-top: 10px; font-size: 10px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+@media (max-width: 768px) {
+  #sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; }
+  .hamburger { display: flex; align-items: center; justify-content: center; }
+  .page { padding: 16px; }
+  .topbar { padding: 0 16px; }
+  .tool-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">眾用</div>
+    <div class="sub">工具箱</div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">總覽</div>
+    <a class="nav-item active" href="index.html">
+      <span class="icon">🏠</span> 首頁
+    </a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">財務</div>
+    <a class="nav-item" href="bank-converter.html">
+      <span class="icon">🏦</span> 帳務轉換
+    </a>
+  </div>
+  <div class="sidebar-footer">v1.0 · 眾用 © 2026</div>
+</div>
+
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div id="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="hamburger" onclick="openSidebar()">☰</button>
+      <span class="topbar-title">眾用 工具箱</span>
+    </div>
+  </div>
+  <div class="page">
+    <div class="page-header">
+      <h1>工具總覽</h1>
+      <p>選擇要使用的工具</p>
+    </div>
+    <div class="tool-grid">
+      <a class="tool-card" href="bank-converter.html">
+        <div class="tc-icon">🏦</div>
+        <div class="tc-name">帳務轉換</div>
+        <div class="tc-desc">彰銀 CSV 匯入，自動分類轉出 Ragic 格式</div>
+        <div class="tc-tag">財務</div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('active'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('active'); }
+</script>
+</body>
+</html>
